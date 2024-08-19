@@ -23,6 +23,17 @@
                             <a href="{% url "webapp:delete_article" article.pk %}" class="btn btn-primary"><i
                                     class="bi bi-trash3"></i></a>
                         {% endif %}
+                        {% if user.is_authenticated %}
+                            <button class="btn btn-secondary like-button"
+                                    data-url="{% url 'webapp:toggle_like_article' article.pk %}">
+                                {% if user in article.like_users.all %}
+                                    Unlike
+                                {% else %}
+                                    Like
+                                {% endif %}
+                                (<span class="like-count">{{ article.like_users.count }}</span>)
+                            </button>
+                        {% endif %}
                     </div>
                 </div>
             </div>

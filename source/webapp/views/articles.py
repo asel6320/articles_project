@@ -1,7 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.shortcuts import redirect
+from django.http import JsonResponse
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils.http import urlencode
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -89,3 +90,19 @@ class DeleteArticleView(PermissionRequiredMixin, DeleteView):
 
     def has_permission(self):
         return super().has_permission() or self.request.user == self.get_object().author
+
+
+def toggle_like_article(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+
+    if request.user in article.like_users.all():
+        article.like_users.remove(request.user)
+        liked = False
+    else:
+        article.like_users.add(request.user)
+        liked = True
+
+    return JsonResponse({
+        'liked': liked,
+        'like_count': article.like_users.count()
+    })
