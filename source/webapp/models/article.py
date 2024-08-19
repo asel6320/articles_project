@@ -27,6 +27,7 @@ class Article(BaseModel):
         through='webapp.ArticleTag',
         through_fields=("article", "tag"),
     )
+    like_users = models.ManyToManyField(get_user_model(), related_name="like_articles", verbose_name="Лайки в статьях")
 
     def get_absolute_url(self):
         return reverse("webapp:article_detail", kwargs={"pk": self.pk})
