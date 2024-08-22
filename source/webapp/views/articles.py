@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse_lazy
 from django.utils.http import urlencode
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -11,45 +11,8 @@ from webapp.forms import ArticleForm, SearchForm
 from webapp.models import Article
 
 
-class ArticleListView(ListView):
-    # queryset = Article.objects.filter(title__contains="Стат")
-    model = Article
-    template_name = "articles/index.html"
-    ordering = ['-created_at']
-    context_object_name = "articles"
-    paginate_by = 5
-
-    # paginate_orphans = 2
-
-    def dispatch(self, request, *args, **kwargs):
-        print(request.user.is_authenticated, "is_authenticated")
-        self.form = self.get_form()
-        self.search_value = self.get_search_value()
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self):
-        return SearchForm(self.request.GET)
-
-    def get_search_value(self):
-        form = self.form
-        if form.is_valid():
-            return form.cleaned_data['search']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.search_value:
-            queryset = queryset.filter(
-                Q(title__contains=self.search_value) | Q(author__contains=self.search_value)
-            )
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["search_form"] = self.form
-        if self.search_value:
-            context["search"] = urlencode({"search": self.search_value})
-            context["search_value"] = self.search_value
-        return context
+def index(request):
+    return render(request, 'index.html')
 
 
 class CreateArticleView(LoginRequiredMixin, CreateView):
@@ -92,17 +55,3 @@ class DeleteArticleView(PermissionRequiredMixin, DeleteView):
         return super().has_permission() or self.request.user == self.get_object().author
 
 
-def toggle_like_article(request, pk):
-    article = get_object_or_404(Article, pk=pk)
-
-    if request.user in article.like_users.all():
-        article.like_users.remove(request.user)
-        liked = False
-    else:
-        article.like_users.add(request.user)
-        liked = True
-
-    return JsonResponse({
-        'liked': liked,
-        'like_count': article.like_users.count()
-    })

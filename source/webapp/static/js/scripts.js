@@ -1,44 +1,34 @@
-async function makeRequest(url, method = "GET") {
-    let response = await fetch(url, { method: method });
-    if (response.ok) {
-        return await response.json();
-    } else {
-        let error = new Error(await response.text());
-        console.log(error);
-        throw error;
-    }
+function performAction(action) {
+    let numberA = document.getElementById('numberA').value;
+    let numberB = document.getElementById('numberB').value;
+    let resultBlock = document.getElementById('result');
+
+    fetch(`/${action}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'  // CSRF защита
+        },
+        body: JSON.stringify({
+            "A": parseFloat(numberA),
+            "B": parseFloat(numberB)
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.answer !== undefined) {
+                resultBlock.textContent = `Answer: ${data.answer}`;
+                resultBlock.classList.add('success');
+                resultBlock.classList.remove('error');
+            } else if (data.error) {
+                resultBlock.textContent = `Error: ${data.error}`;
+                resultBlock.classList.add('error');
+                resultBlock.classList.remove('success');
+            }
+        })
+        .catch(error => {
+            resultBlock.textContent = `Error: ${error}`;
+            resultBlock.classList.add('error');
+            resultBlock.classList.remove('success');
+        });
 }
-
-async function onClick(event) {
-    event.preventDefault();
-    let button = event.target.closest('button.like-button');  // Get the clicked button
-    let url = button.dataset.url;  // Get the URL from the data-url attribute
-
-    try {
-        let response = await makeRequest(url);
-        let likeCountSpan = button.querySelector(".like-count");
-
-        // Update the like count
-        likeCountSpan.innerText = response.like_count;
-
-        // Update the button text based on the like status
-        if (response.liked) {
-            button.innerHTML = `Unlike (<span class="like-count">${response.like_count}</span>)`;
-        } else {
-            button.innerHTML = `Like (<span class="like-count">${response.like_count}</span>)`;
-        }
-
-        console.log(response);
-    } catch (error) {
-        console.error("Request failed", error);
-    }
-}
-
-function onLoad() {
-    let buttons = document.querySelectorAll('.like-button');
-    for (let button of buttons) {
-        button.addEventListener("click", onClick);
-    }
-}
-
-window.addEventListener("load", onLoad);

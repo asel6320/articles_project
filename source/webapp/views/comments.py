@@ -47,17 +47,3 @@ class DeleteCommentView(DeleteView):
         return redirect("webapp:article_detail", pk=self.object.article.pk)
 
 
-def toggle_like_comment(request, pk):
-    comment = get_object_or_404(Comment, pk=pk)
-
-    if request.user in comment.like_users.all():
-        comment.like_users.remove(request.user)
-        liked = False
-    else:
-        comment.like_users.add(request.user)
-        liked = True
-
-    return JsonResponse({
-        'liked': liked,
-        'like_count': comment.like_users.count()
-    })
